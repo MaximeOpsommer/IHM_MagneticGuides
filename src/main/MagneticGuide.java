@@ -12,11 +12,18 @@ public class MagneticGuide extends CExtensionalTag {
 	private CSegment cseg;
 	private CExtensionalTag theTag;
 	private int nb;
+	private String type;
 	
 
-	public MagneticGuide(Canvas canvas, Point2D p, int nb) {
+	public MagneticGuide(Canvas canvas, Point2D p, int nb, String type) {
 		this.canvas = canvas;
-		this.cseg = this.canvas.newSegment(- canvas.getMaxX()*2, (int) p.getY(), canvas.getMaxX()*2, (int) p.getY());
+		this.type = type;
+		if(type.equals("horizontal")){
+			this.cseg = this.canvas.newSegment(- canvas.getMaxX()*2, (int) p.getY(), canvas.getMaxX()*2, (int) p.getY());
+		}
+		else{
+			this.cseg = this.canvas.newSegment((int) p.getX(), - canvas.getMaxY()*2, (int) p.getX(), canvas.getMaxY()*2);
+		}
 		this.cseg.setStroke(new BasicStroke(5));
 		this.cseg.belowAll();
 		this.cseg.addTag(this);
@@ -35,6 +42,10 @@ public class MagneticGuide extends CExtensionalTag {
 	
 	public int getNb(){
 		return this.nb;
+	}
+	
+	public String getType(){
+		return this.type;
 	}
 	
 }

@@ -52,12 +52,22 @@ public class MagneticGuides extends JFrame {
 
 			 private Point2D p ;
 			 private CShape draggedShape ;
+			 private MagneticGuide mSelect;
 			 private int cpt = 1;
 			 
 			 public MagneticGuide getHGuide(CShape shape){
 			    	for (int k = 0; k < allMagH.size() ; k++){
 			    		if (shape.getCenterY() == allMagH.get(k).getCenterY()){
 			    			return allMagH.get(k);
+			    		}
+			    	}
+			    	return null;
+			 }
+			 
+			 public MagneticGuide getVGuide(CShape shape){
+			    	for (int k = 0; k < allMagV.size() ; k++){
+			    		if (shape.getCenterX() == allMagV.get(k).getCenterX()){
+			    			return allMagV.get(k);
 			    		}
 			    	}
 			    	return null;
@@ -75,11 +85,20 @@ public class MagneticGuides extends JFrame {
 							  }
 						   } ;
 						   
-					Transition createSeg = new Press(BUTTON1){
+					Transition createSegH = new Press(BUTTON1){
 						public void action(){
-							MagneticGuide newMag = new MagneticGuide(canvas, getPoint(), cpt);
+							MagneticGuide newMag = new MagneticGuide(canvas, getPoint(), cpt, "horizontal");
 							cpt++;
 							allMagH.add(newMag);
+							
+						}
+					};
+					
+					Transition createSegV = new Press(BUTTON3){
+						public void action(){
+							MagneticGuide newMag = new MagneticGuide(canvas, getPoint(), cpt, "vertical");
+							cpt++;
+							allMagV.add(newMag);
 							
 						}
 					};
@@ -88,6 +107,17 @@ public class MagneticGuides extends JFrame {
 						public void action (){
 							p = getPoint() ;
 							draggedShape = getShape();
+							MagneticGuide guideH = getHGuide(draggedShape);
+							MagneticGuide guideV = getVGuide(draggedShape);
+							if(guideH != null){
+								mSelect = guideH;
+							}
+							else if(guideV != null){
+								mSelect = guideV;
+							}
+							else{
+								mSelect = null;
+							}
 						}
 					};
 				} ;
@@ -118,14 +148,34 @@ public class MagneticGuides extends JFrame {
 				    				if(intersect != -1){
 				    					draggedShape.addTag(allMagH.get(k).getTag());
 				    					horizontalMap.put(draggedShape, allMagH.get(k));
-				    					draggedShape.setFillPaint(new Color(0,0,0));
 				    					draggedShape.translateTo(pointX,pointY);
 				    					break;
 				    				}
 				    				else{
 				    					draggedShape.removeTag(allMagH.get(k).getTag());
-				    					draggedShape.setFillPaint(new Color(0,0,255));
 				    					horizontalMap.remove(draggedShape);
+				    				}
+		    					}
+			    				
+			    				for (int k = 0; k < allMagV.size() ; k++){
+			    					int intersect = -1;
+			    					int pointX = -1;
+			    					int pointY = (int) draggedShape.getCenterY();
+				    				for (int j = (int) draggedShape.getMinX(); j <= (int) draggedShape.getMaxX() ; j++){
+				    					if(j <= (int) allMagV.get(k).getSeg().getMaxX() && j >= (int) allMagV.get(k).getSeg().getMinX()){
+			    							intersect = k;
+			    							pointX = j;
+			    						}
+				    				}
+				    				if(intersect != -1){
+				    					draggedShape.addTag(allMagV.get(k).getTag());
+				    					verticalMap.put(draggedShape, allMagV.get(k));
+				    					draggedShape.translateTo(pointX,pointY);
+				    					break;
+				    				}
+				    				else{
+				    					draggedShape.removeTag(allMagV.get(k).getTag());
+				    					verticalMap.remove(draggedShape);
 				    				}
 		    					}
 			    			
@@ -138,19 +188,32 @@ public class MagneticGuides extends JFrame {
 				public State dragSeg = new State(){
 					Transition drag = new Drag(BUTTON1) {
 						  public void action() {
-							 MagneticGuide guide = getHGuide(draggedShape);
-							 if(guide == null){
-								 System.out.println("hihi");
+							 if (mSelect == null){
+								 System.out.println("Probleme");
 							 }
-							 for(CShape shape : horizontalMap.keySet()){
-								 if((horizontalMap.get(shape)).getNb() == guide.getNb()){
-									 Point2D q = getPoint() ;
-									 shape.translateBy(0, q.getY() - p.getY()) ;
+							 else if(mSelect.getType().equals("horizontal")){
+								 for(CShape shape : horizontalMap.keySet()){
+									 if((horizontalMap.get(shape)).getNb() == mSelect.getNb()){
+										 Point2D q = getPoint() ;
+										 shape.translateBy(0, q.getY() - p.getY()) ;
+									 }
 								 }
+								 Point2D q = getPoint() ;
+								 draggedShape.translateBy(0, q.getY() - p.getY()) ;
+								 p = q;
+								 
 							 }
-							 Point2D q = getPoint() ;
-							 draggedShape.translateBy(0, q.getY() - p.getY()) ;
-							 p = q ;
+							 else if(mSelect.getType().equals("vertical")){
+								 for(CShape shape : verticalMap.keySet()){
+									 if((verticalMap.get(shape)).getNb() == mSelect.getNb()){
+										 Point2D q = getPoint() ;
+										 shape.translateBy(q.getX() - p.getX(), 0) ;
+									 }
+								 }
+								 Point2D q = getPoint() ;
+								 draggedShape.translateBy(q.getX() - p.getX(), 0) ;
+								 p = q ;
+							 }
 							 
 						  }
 					   } ;
