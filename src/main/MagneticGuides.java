@@ -20,6 +20,7 @@ import java.awt.geom.Point2D ;
 import javax.swing.JFrame ;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList ;
 
 /**
@@ -31,20 +32,36 @@ public class MagneticGuides extends JFrame {
 
     private Canvas canvas ;
     private CExtensionalTag oTag ;
-    private ArrayList<MagneticGuide> allMag;
+    private ArrayList<MagneticGuide> allMagH;
+    private ArrayList<MagneticGuide> allMagV;
+    private HashMap<CShape,MagneticGuide> horizontalMap;
+    private HashMap<CShape,MagneticGuide> verticalMap;
     
     public MagneticGuides(String title, int width, int height) {
 	   super(title) ;
 	   canvas = new Canvas(width, height) ;
 	   canvas.setAntialiased(true) ;
 	   getContentPane().add(canvas) ;
-	   allMag = new ArrayList<MagneticGuide>();
+	   allMagH = new ArrayList<MagneticGuide>();
+	   allMagV = new ArrayList<MagneticGuide>();
+	   horizontalMap = new HashMap<CShape,MagneticGuide>();
+	   verticalMap = new HashMap<CShape,MagneticGuide>();
 	   oTag = new CExtensionalTag(canvas) {} ;
 	   
 	   CStateMachine sm = new CStateMachine() {
 
 			 private Point2D p ;
 			 private CShape draggedShape ;
+			 private int cpt = 1;
+			 
+			 public MagneticGuide getHGuide(CShape shape){
+			    	for (int k = 0; k < allMagH.size() ; k++){
+			    		if (shape.getCenterY() == allMagH.get(k).getCenterY()){
+			    			return allMagH.get(k);
+			    		}
+			    	}
+			    	return null;
+			 }
 			 
 			 public State start = new State() {
 				 	
@@ -60,8 +77,9 @@ public class MagneticGuides extends JFrame {
 						   
 					Transition createSeg = new Press(BUTTON1){
 						public void action(){
-							MagneticGuide newMag = new MagneticGuide(canvas, getPoint(), "horizontal");
-							allMag.add(newMag);
+							MagneticGuide newMag = new MagneticGuide(canvas, getPoint(), cpt);
+							cpt++;
+							allMagH.add(newMag);
 							
 						}
 					};
@@ -87,27 +105,27 @@ public class MagneticGuides extends JFrame {
 				    Transition release = new Release(BUTTON1, ">> start") {
 				    		public void action(){
 				    			
-			    				for (int k = 0; k < allMag.size() ; k++){
+			    				for (int k = 0; k < allMagH.size() ; k++){
 			    					int intersect = -1;
+			    					int pointY = -1;
+			    					int pointX = (int) draggedShape.getCenterX();
 				    				for (int j = (int) draggedShape.getMinY(); j <= (int) draggedShape.getMaxY() ; j++){
-				    					if(j == (int) allMag.get(k).getSeg().getMaxY()){
+				    					if(j <= (int) allMagH.get(k).getSeg().getMaxY() && j >= (int) allMagH.get(k).getSeg().getMinY()){
 			    							intersect = k;
+			    							pointY = j;
 			    						}
 				    				}
 				    				if(intersect != -1){
-				    					Point2D q = getPoint() ;
-				    					draggedShape.addTag(allMag.get(k).getTag());
-				    					draggedShape.setParent(allMag.get(k).getSeg());
+				    					draggedShape.addTag(allMagH.get(k).getTag());
+				    					horizontalMap.put(draggedShape, allMagH.get(k));
 				    					draggedShape.setFillPaint(new Color(0,0,0));
-				    					draggedShape.translateTo(q.getX(),q.getY());
+				    					draggedShape.translateTo(pointX,pointY);
 				    					break;
 				    				}
 				    				else{
-				    					Point2D q = getPoint() ;
-				    					draggedShape.removeTag(allMag.get(k).getTag());
+				    					draggedShape.removeTag(allMagH.get(k).getTag());
 				    					draggedShape.setFillPaint(new Color(0,0,255));
-				    					draggedShape.setParent(null);
-				    					draggedShape.translateTo(q.getX(),q.getY()) ;
+				    					horizontalMap.remove(draggedShape);
 				    				}
 		    					}
 			    			
@@ -120,6 +138,16 @@ public class MagneticGuides extends JFrame {
 				public State dragSeg = new State(){
 					Transition drag = new Drag(BUTTON1) {
 						  public void action() {
+							 MagneticGuide guide = getHGuide(draggedShape);
+							 if(guide == null){
+								 System.out.println("hihi");
+							 }
+							 for(CShape shape : horizontalMap.keySet()){
+								 if((horizontalMap.get(shape)).getNb() == guide.getNb()){
+									 Point2D q = getPoint() ;
+									 shape.translateBy(0, q.getY() - p.getY()) ;
+								 }
+							 }
 							 Point2D q = getPoint() ;
 							 draggedShape.translateBy(0, q.getY() - p.getY()) ;
 							 p = q ;
