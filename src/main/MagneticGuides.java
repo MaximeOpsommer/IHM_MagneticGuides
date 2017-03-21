@@ -84,6 +84,42 @@ public class MagneticGuides extends JFrame {
 								 
 							  }
 						   } ;
+					
+					Transition cacherAfficher = new Press(BUTTON2, ">> hide"){
+						public void action(){
+							for(MagneticGuide mag : allMagH){
+								mag.getSeg().setTransparencyOutline(0);
+							}
+							for(MagneticGuide mag : allMagV){
+								mag.getSeg().setTransparencyOutline(0);
+							}
+						}
+					};
+					
+					Transition supprimer = new PressOnTag(MagneticGuide.class , BUTTON2){
+						public void action(){
+							MagneticGuide guideH = getHGuide(getShape());
+							MagneticGuide guideV = getVGuide(getShape());
+							if(guideH != null){
+								for(CShape key : horizontalMap.keySet()){
+									if(horizontalMap.get(key).getNb() == guideH.getNb()){
+										horizontalMap.remove(key);
+									}
+								}
+								allMagH.remove(guideH);
+								guideH.getSeg().remove();
+							}
+							if(guideV != null){
+								for(CShape key : verticalMap.keySet()){
+									if(verticalMap.get(key).getNb() == guideV.getNb()){
+										verticalMap.remove(key);
+									}
+								}
+								allMagV.remove(guideV);
+								guideV.getSeg().remove();
+							}
+						}
+					};
 						   
 					Transition createSegH = new Press(BUTTON1){
 						public void action(){
@@ -184,6 +220,19 @@ public class MagneticGuides extends JFrame {
 				    
 				    
 				} ;
+				
+				public State hide = new State(){
+					Transition ok = new Release(BUTTON2,">> start"){
+						public void action(){
+							for(MagneticGuide mag : allMagH){
+								mag.getSeg().setTransparencyOutline(1);
+							}
+							for(MagneticGuide mag : allMagV){
+								mag.getSeg().setTransparencyOutline(1);
+							}
+						}
+					};
+				};
 				
 				public State dragSeg = new State(){
 					Transition drag = new Drag(BUTTON1) {
